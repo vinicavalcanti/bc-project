@@ -1,0 +1,46 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Service Role'
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: EKS Cluster Name
+
+  SubnetIDs:
+    Description: Subnet IDs
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  Environment:
+    Type: String
+    Default: "dev"
+    AllowedValues: ["dev", "stage", "prod"]
+
+  VpcId:
+    Description: The VPC of the worker instances
+    Type: AWS::EC2::VPC::Id
+
+Resources:
+  AWSEksCluster:
+    Type: "AWS::EKS::Cluster"
+    Properties:
+      Name: !Ref ClusterName
+      Version: "1.10"
+      RoleArn: !ImportValue eks-vc-role
+      ResourcesVpcConfig:
+        SecurityGroupIds: 
+        - !Ref ControlPlaneSecurityGroup
+        SubnetIds: !Ref SubnetIDs
+
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Cluster communication with worker nodes
+      VpcId: !Ref VpcId
+
+# ********* Output section *********
+Outputs:
+    ControlSecurityId:
+      Value: !GetAtt ControlPlaneSecurityGroup.GroupId
+      Export:
+        Name: !Sub "${ClusterName}-cluster-sg"

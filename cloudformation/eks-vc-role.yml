@@ -1,0 +1,30 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Service Role'
+
+# ********* Output section *********
+Resources:
+  AWSServiceRoleForAmazonEKS:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "eks-vc-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+
+# ********* Output section *********
+Outputs:
+    AWSEksClusterRole:
+      Value: !GetAtt AWSServiceRoleForAmazonEKS.Arn
+      Export:
+        Name: "eks-vc-role"

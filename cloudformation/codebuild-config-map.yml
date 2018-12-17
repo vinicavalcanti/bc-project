@@ -1,0 +1,136 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Role assumed by CodeBuild for using kubectl'
+
+
+Parameters:
+
+  ClusterName:
+    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
+    Type: String
+
+# ********* Resources section *********
+Resources:
+
+#############################################################################
+# CodeBuild: BuildProject: Test Files
+# - Utiliza serverless framework para hacer despliegue de funciones serverless
+
+  ValidateConfig:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: EKS_CLUSTER_NAME
+            Value: !Ref ClusterName
+          - Name: EKS_KUBECTL_ROLE_ARN
+            Value: !Sub arn:aws:iam::${AWS::AccountId}:role/${KubectlRoleName}
+      Name: !Sub "${AWS::StackName}-workerjoin"
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        BuildSpec: !Sub |
+            version: 0.2
+            phases:
+              install:
+                commands:
+                  - mkdir bin
+                  - curl -sS -o bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+                  - curl -sS -o bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
+                  - chmod +x ./bin/kubectl ./bin/aws-iam-authenticator
+                  - export PATH=$PWD/bin:$PATH
+                  - apt-get update && apt-get -y install jq golang python3-pip python3-dev && pip3 install --upgrade awscli
+              pre_build:
+                commands:
+                  - echo "Creating ConfigMap"
+                  - ROLE="    - rolearn: $EKS_KUBECTL_ROLE_ARN\nusername: build\n      groups:\n        - system:masters"
+                  - echo $ROLE
+                build:
+                  commands:
+                    - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+                post_build:
+                  commands:
+                    - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+                    - export AWS_ACCESS_KEY_ID="$(echo $CREDENTIALS | jq -r '.Credentials.AccessKeyId')"
+                    - export AWS_SECRET_ACCESS_KEY="$(echo $CREDENTIALS | jq -r '.Credentials.SecretAccessKey')"
+                    - export AWS_SESSION_TOKEN="$(echo $CREDENTIALS | jq -r '.Credentials.SessionToken')"
+                    - export AWS_EXPIRATION=$(echo $CREDENTIALS | jq -r '.Credentials.Expiration')
+                    - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+                    - kubectl get -n kube-system configmap/aws-auth -o yaml | awk "/mapRoles: \|/{print;print \"$ROLE\";next}1" > /tmp/aws-auth-patch.yml
+                    - cat /tmp/aws-auth-patch.yml
+                    - kubectl patch configmap/aws-auth -n kube-system --patch "$(cat /tmp/aws-auth-patch.yml)"
+        Type: CODEPIPELINE
+
+  KubectlRoleName:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS:
+            - !Sub arn:aws:iam::${AWS::AccountId}:root
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: codebuild-kubectl-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:Describe*
+                Resource: "*"
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${KubectlRoleName}
+                Effect: Allow
+                Action:
+                  - sts:AssumeRole
+              - Resource: '*'
+                Effect: Allow
+                Action:
+                  - eks:Describe*
+              - Resource: '*'
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+              - Resource: '*'
+                Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeDhcpOptions
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeVpcs
+                  - ec2:CreateNetworkInterfacePermission
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
