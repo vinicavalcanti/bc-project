@@ -7,8 +7,8 @@
         "NodeAutoScalingGroupMaxSize": "3",
         "NodeVolumeSize": "20",
         "NodeGroupName": "nodegroup-cluster",
-        "VpcId": "vpc-0ba32be7821fd7442",
-        "Subnets": "subnet-03f0e4eeb43920df5,subnet-0cf56ccfde3685ac6,subnet-0b6a52756b5698185",
+        "VpcId": "vpc-05e9cc266ae11b873",
+        "Subnets": "subnet-046a7b945c72009f9,subnet-08eac3141a54bc5ad,subnet-0315a3dabd50e566b",
         "Environment": "dev"
     },
     "Tags": {
