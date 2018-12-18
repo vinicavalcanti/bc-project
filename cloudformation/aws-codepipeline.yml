@@ -155,7 +155,8 @@ Resources:
                   - export AWS_SECRET_ACCESS_KEY="$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')"
                   - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
                   - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
-                  - /bin/bash prometheus-kubernetes/deploy
+                  - cd prometheus-kubernetes
+                  - bash deploy
         Type: CODEPIPELINE
 
 #############################################################################
