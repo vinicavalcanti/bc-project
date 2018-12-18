@@ -294,7 +294,7 @@ Resources:
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Sub codebuild-worker-join
+                ProjectName: !Sub "${ClusterName}-codebuild-worker-join"
               OutputArtifacts: []
 
 ### Deploy Kong inside the eks Cluster
