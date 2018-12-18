@@ -70,6 +70,8 @@ Resources:
                             aws cloudformation validate-template --template-body file://$cfn_template
                       done
         Type: CODEPIPELINE
+
+
 #############################################################################
 ################ Kong Codebuild Deploy Project ##############################
   KongBuildConfig:
@@ -247,8 +249,8 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 Capabilities: CAPABILITY_IAM
                 StackName: !Sub "${AWS::StackName}-workers"
-                TemplatePath: "Repo::cloudformation/amazon-eks-nodegroup.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks.workernodes.config.dev.json"
+                TemplatePath: "Repo::cloudformation/eks-nodegroup1.yml"
+                TemplateConfiguration: "Repo::cloudformation/config/eks.nodegroup1.config.dev.json"
                 ParameterOverrides: !Sub |
                   {
                      "ClusterName" : "${ClusterName}",
@@ -257,7 +259,7 @@ Resources:
                 RoleArn: !GetAtt MasterEKSRole.Arn
               OutputArtifacts: []
 
-              ## Deploy Worker Nodes 1
+              ## Deploy Worker Nodes 2
             - RunOrder: 2
               Name: WorkerNodes2
               ActionTypeId:
@@ -271,8 +273,8 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 Capabilities: CAPABILITY_IAM
                 StackName: !Sub "${AWS::StackName}-workers2"
-                TemplatePath: "Repo::cloudformation/amazon-eks-nodegroup.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks.app2.worknodes.config.dev.json"
+                TemplatePath: "Repo::cloudformation/eks-nodegroup2.yml"
+                TemplateConfiguration: "Repo::cloudformation/config/eks.nodegroup2.config.dev.json"
                 ParameterOverrides: !Sub |
                   {
                      "ClusterName" : "${ClusterName}",
@@ -280,6 +282,7 @@ Resources:
                   }
                 RoleArn: !GetAtt MasterEKSRole.Arn
               OutputArtifacts: []
+#############################################
 
             - RunOrder: 3
               Name: "WorkerJoin"
