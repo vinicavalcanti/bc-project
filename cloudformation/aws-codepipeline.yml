@@ -147,6 +147,12 @@ Resources:
               - cloudformation:ValidateTemplate
               - sts:AssumeRole
             Resource: "*"
+
+          - Resource: '*'
+            Effect: Allow
+            Action:
+              - eks:Describe*
+
           -
             Effect: Allow
             Action:
