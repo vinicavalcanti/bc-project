@@ -156,6 +156,7 @@ Resources:
                   - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
                   - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
                   - cd prometheus-kubernetes
+                  - ls -lh
                   - bash deploy
         Type: CODEPIPELINE
 
