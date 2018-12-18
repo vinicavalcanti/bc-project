@@ -1,7 +1,7 @@
 {
     "Parameters": {
-        "KeyName": "oregon-main",
-        "NodeImageId": "ami-0a54c984b9f908c81",
+        "KeyName": "vinicius.cavalcanti",
+        "NodeImageId": "ami-0440e4f6b9713faf6",
         "NodeInstanceType": "t2.medium",
         "NodeAutoScalingGroupMinSize": "1",
         "NodeAutoScalingGroupMaxSize": "3",

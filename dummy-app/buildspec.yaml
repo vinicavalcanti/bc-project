@@ -1,0 +1,30 @@
+  version: 0.2
+  phases:
+    install:
+      commands:
+          - dockerd-entrypoint.sh >/dev/null 2>&1
+    pre_build:
+        commands:
+          - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+          - sed -i 's@CONTAINER_IMAGE@'"$REPOSITORY_URI:$TAG"'@' ./k8s/dummy-app-deployment.yaml
+          - $(aws ecr get-login --no-include-email)
+          - export KUBECONFIG=$HOME/.kube/config
+    build:
+      commands:
+        - echo Building the Docker image...
+        - docker build -t $REPOSITORY_URI:latest .
+        - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
+        - docker push $REPOSITORY_URI:$TAG
+
+    post_build:
+      commands:
+        - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+        - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+        - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+        - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+        - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+        - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+        - kubectl apply -f ./k8s/dummy-app-deployment.yaml
+        - printf '[{"name":"dummy-app","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build.json
+  artifacts:
+    files: build.json
