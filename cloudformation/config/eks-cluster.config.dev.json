@@ -1,7 +1,7 @@
 {
     "Parameters": {
-      "VpcId": "vpc-05e9cc266ae11b873",
-      "SubnetIDs" : "subnet-046a7b945c72009f9,subnet-08eac3141a54bc5ad,subnet-0315a3dabd50e566b"
+      "VpcId": "vpc-0f213ea49868d36ef",
+      "SubnetIDs" : "subnet-0a7922447b6a37264,subnet-0b8ad91a1e575d574"
     },
     "Tags": {
         "Environment": "dev"

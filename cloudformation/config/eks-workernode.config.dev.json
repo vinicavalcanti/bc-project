@@ -1,14 +1,14 @@
 {
     "Parameters": {
         "KeyName": "vinicius.cavalcanti",
-        "NodeImageId": "ami-0440e4f6b9713faf6",
+        "NodeImageId": "ami-0b4eb1d8782fc3aea",
         "NodeInstanceType": "t2.medium",
         "NodeAutoScalingGroupMinSize": "1",
         "NodeAutoScalingGroupMaxSize": "3",
         "NodeVolumeSize": "20",
         "NodeGroupName": "nodegroup-cluster",
-        "VpcId": "vpc-05e9cc266ae11b873",
-        "Subnets": "subnet-046a7b945c72009f9,subnet-08eac3141a54bc5ad,subnet-0315a3dabd50e566b",
+        "VpcId": "vpc-0f213ea49868d36ef",
+        "Subnets": "subnet-022bf305d4fef9a93,subnet-0d6e4a935536b1158",
         "Environment": "dev"
     },
     "Tags": {
