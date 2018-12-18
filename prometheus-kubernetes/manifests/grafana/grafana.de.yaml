@@ -25,7 +25,7 @@ spec:
         fsGroup: 472
       containers:
       - name: grafana
-        image: grafana/grafana:GRAFANA_VERSION
+        image: grafana/grafana:5.1.1
         env:
         - name: GF_AUTH_BASIC_ENABLED
           value: "true"
@@ -84,7 +84,6 @@ spec:
         - name: grafana-dashboards
           mountPath: /var/grafana-dashboards
       nodeSelector:
-        node_label_key: node_label_value
       volumes:
       - name: grafana-storage
         emptyDir: {}

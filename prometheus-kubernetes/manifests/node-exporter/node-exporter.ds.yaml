@@ -12,7 +12,7 @@ spec:
       hostNetwork: true
       hostPID: true
       containers:
-      - image:  quay.io/prometheus/node-exporter:NODE_EXPORTER_VERSION
+      - image:  quay.io/prometheus/node-exporter:v0.16.0-rc.3
         args:
         - "--path.procfs=/host/proc"
         - "--path.sysfs=/host/sys"

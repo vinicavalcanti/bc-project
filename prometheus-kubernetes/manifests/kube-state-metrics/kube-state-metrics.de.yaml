@@ -16,7 +16,7 @@ spec:
       serviceAccountName: kube-state-metrics
       containers:
       - name: kube-state-metrics
-        image: k8s.gcr.io/kube-state-metrics:KUBE_STATE_METRICS_VERSION
+        image: k8s.gcr.io/kube-state-metrics:v1.3.1
         ports:
         - name: http-metrics
           containerPort: 8080
@@ -61,4 +61,3 @@ spec:
           - --threshold=5
           - --deployment=kube-state-metrics
       nodeSelector:
-        node_label_key: node_label_value

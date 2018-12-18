@@ -4,9 +4,9 @@ metadata:
   name: ssd
   annotations:
     storageclass.beta.kubernetes.io/is-default-class: "true"
-provisioner: STORAGE_CLASS_PROVISIONER
+provisioner: kubernetes.io/aws-ebs
 parameters:
-  type: STORAGE_CLASS_TYPE
+  type: gp2
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
@@ -16,8 +16,8 @@ metadata:
     prometheus: k8s
 spec:
   replicas: 2
-  version: PROMETHEUS_VERSION
-  externalUrl: PROMETHEUS_EXTERNAL_URL
+  version: v2.2.1
+  externalUrl: http://127.0.0.1:9090
   serviceAccountName: prometheus-k8s
   serviceMonitorSelector:
     matchExpressions:
@@ -26,12 +26,10 @@ spec:
     matchLabels:
       role: prometheus-rulefiles
       prometheus: k8s
-  nodeSelector:
-    node_label_key: node_label_value
   resources:
     requests:
-      memory: PROMETHEUS_MEMORY_REQUEST
-  retention: PROMETHEUS_STORAGE_RETENTION
+      memory: 1Gi
+  retention: 168h
   storage:
     class: ssd
     selector:
@@ -44,7 +42,7 @@ spec:
         storageClassName: ssd
         resources:
           requests:
-            storage: PROMETHEUS_STORAGE_VOLUME_SIZE
+            storage: 40Gi
   alerting:
     alertmanagers:
     - namespace: monitoring

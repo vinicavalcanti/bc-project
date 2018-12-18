@@ -6,7 +6,5 @@ metadata:
     alertmanager: main
 spec:
   replicas: 3
-  version: ALERTMANAGER_VERSION
-  externalUrl: ALERTMANAGER_EXTERNAL_URL
-  nodeSelector:
-    node_label_key: node_label_value
+  version: v0.15.0-rc.1
+  externalUrl: http://127.0.0.1:9093

@@ -15,7 +15,7 @@ spec:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        image: quay.io/coreos/prometheus-operator:PROMETHEUS_OPERATOR_VERSION
+        image: quay.io/coreos/prometheus-operator:v0.19.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -29,4 +29,3 @@ spec:
             memory: 50Mi
       serviceAccountName: prometheus-operator
       nodeSelector:
-        node_label_key: node_label_value
