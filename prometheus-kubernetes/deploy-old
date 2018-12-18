@@ -41,18 +41,18 @@ if [ -z "${NAMESPACE}" ]; then
 fi
 
 #check for uncommitted changes
-echo -e "${ORANGE}Check for uncommitted changes"
-echo
+#echo -e "${ORANGE}Check for uncommitted changes"
+#echo
 
-if [ "$(git status -s)" != "" ]; then
-  echo -e "${RED}WARNING! ${WHITE}You have uncommitted changes! Please commit your changes now, then press ENTER"
-  tput sgr0
-  git status -s
-  read -p " [ENTER]: " next
-else
-  echo -e "${GREEN}OK! ${WHITE}No uncommitted changes detected"
-  tput sgr0
-fi
+#if [ "$(git status -s)" != "" ]; then
+#  echo -e "${RED}WARNING! ${WHITE}You have uncommitted changes! Please commit your changes now, then press ENTER"
+#  tput sgr0
+#  git status -s
+#  read -p " [ENTER]: " next
+#else
+#  echo -e "${GREEN}OK! ${WHITE}No uncommitted changes detected"
+#  tput sgr0
+#fi
 
 echo
 echo -e "${BLUE}Creating ${ORANGE}'monitoring' ${BLUE}namespace."
@@ -65,7 +65,7 @@ kctl() {
 }
 
 #Cloud Provider
-PS3="${GREEN_PS3}Please select your cloud provider:"
+#PS3="${GREEN_PS3}Please select your cloud provider:"
 
 #options=("AWS" "GCP" "Azure" "Custom")
 #select opt in "${options[@]}"
@@ -73,11 +73,11 @@ PS3="${GREEN_PS3}Please select your cloud provider:"
 #    tput sgr0
 #    case $opt in
 #        "AWS")
-            echo "Deploying on AWS"
-            STORAGE_CLASS_PROVISIONER=kubernetes.io/aws-ebs
-            STORAGE_CLASS_TYPE=gp2
-            sed -i -e 's,STORAGE_CLASS_PROVISIONER,'"$STORAGE_CLASS_PROVISIONER"',g' manifests/prometheus/prometheus-k8s.yaml;
-            sed -i -e 's,STORAGE_CLASS_TYPE,'"$STORAGE_CLASS_TYPE"',g' manifests/prometheus/prometheus-k8s.yaml;
+echo "Deploying on AWS"
+STORAGE_CLASS_PROVISIONER=kubernetes.io/aws-ebs
+STORAGE_CLASS_TYPE=gp2
+sed -i -e 's,STORAGE_CLASS_PROVISIONER,'"$STORAGE_CLASS_PROVISIONER"',g' manifests/prometheus/prometheus-k8s.yaml;
+sed -i -e 's,STORAGE_CLASS_TYPE,'"$STORAGE_CLASS_TYPE"',g' manifests/prometheus/prometheus-k8s.yaml;
 #            break
 #            ;;
 #        "GCP")
@@ -134,68 +134,68 @@ PS3="${GREEN_PS3}Please select your cloud provider:"
 #set components version
 ###########################################################################################
 echo -e "${ORANGE}Setting components version"
-tput sgr0
+#tput sgr0
 
 #Prometheus Operator
-read -p "Enter Prometheus Operator version [$PROMETHEUS_OPERATOR_DEFAULT_VERSION]: " PROMETHEUS_OPERATOR_VERSION
+#read -p "Enter Prometheus Operator version [$PROMETHEUS_OPERATOR_DEFAULT_VERSION]: " PROMETHEUS_OPERATOR_VERSION
 PROMETHEUS_OPERATOR_VERSION=${PROMETHEUS_OPERATOR_VERSION:-$PROMETHEUS_OPERATOR_DEFAULT_VERSION}
 
 #Prometheus
-echo
-read -p "Enter Prometheus version [$PROMETHEUS_DEFAULT_VERSION]: " PROMETHEUS_VERSION
+#echo
+#read -p "Enter Prometheus version [$PROMETHEUS_DEFAULT_VERSION]: " PROMETHEUS_VERSION
 PROMETHEUS_VERSION=${PROMETHEUS_VERSION:-$PROMETHEUS_DEFAULT_VERSION}
 
 #Prometheus Storage Retention
-echo
-read -p "Enter Prometheus storage retention period in hours [$PROMETHEUS_STORAGE_DEFAULT_RETENTION]: " PROMETHEUS_STORAGE_RETENTION
+#echo
+#read -p "Enter Prometheus storage retention period in hours [$PROMETHEUS_STORAGE_DEFAULT_RETENTION]: " PROMETHEUS_STORAGE_RETENTION
 PROMETHEUS_STORAGE_RETENTION=${PROMETHEUS_STORAGE_RETENTION:-$PROMETHEUS_STORAGE_DEFAULT_RETENTION}
 
 #Prometheus Storage Volume Size
-echo
-read -p "Enter Prometheus storage volume size [$PROMETHEUS_STORAGE_DEFAULT_VOLUME_SIZE]: " PROMETHEUS_STORAGE_VOLUME_SIZE
+#echo
+#read -p "Enter Prometheus storage volume size [$PROMETHEUS_STORAGE_DEFAULT_VOLUME_SIZE]: " PROMETHEUS_STORAGE_VOLUME_SIZE
 PROMETHEUS_STORAGE_VOLUME_SIZE=${PROMETHEUS_STORAGE_VOLUME_SIZE:-$PROMETHEUS_STORAGE_DEFAULT_VOLUME_SIZE}
 
 #Prometheus Memory Request
-echo
-read -p "Enter Prometheus memory request in Gi or Mi [$PROMETHEUS_DEFAULT_MEMORY_REQUEST]: " PROMETHEUS_MEMORY_REQUEST
+#echo
+#read -p "Enter Prometheus memory request in Gi or Mi [$PROMETHEUS_DEFAULT_MEMORY_REQUEST]: " PROMETHEUS_MEMORY_REQUEST
 PROMETHEUS_MEMORY_REQUEST=${PROMETHEUS_MEMORY_REQUEST:-$PROMETHEUS_DEFAULT_MEMORY_REQUEST}
 
 #Grafana
-echo
-read -p "Enter Grafana version [$GRAFANA_DEFAULT_VERSION]: " GRAFANA_VERSION
+#echo
+#read -p "Enter Grafana version [$GRAFANA_DEFAULT_VERSION]: " GRAFANA_VERSION
 GRAFANA_VERSION=${GRAFANA_VERSION:-$GRAFANA_DEFAULT_VERSION}
 
 #Alertmanager
-echo
-read -p "Enter Alert Manager version [$ALERTMANAGER_DEFAULT_VERSION]: " ALERTMANAGER_VERSION
+#echo
+#read -p "Enter Alert Manager version [$ALERTMANAGER_DEFAULT_VERSION]: " ALERTMANAGER_VERSION
 ALERTMANAGER_VERSION=${ALERTMANAGER_VERSION:-$ALERTMANAGER_DEFAULT_VERSION}
 
 #Node Exporter
-echo
-read -p "Enter Node Exporter version [$NODE_EXPORTER_DEFAULT_VERSION]: " NODE_EXPORTER_VERSION
+#echo
+#read -p "Enter Node Exporter version [$NODE_EXPORTER_DEFAULT_VERSION]: " NODE_EXPORTER_VERSION
 NODE_EXPORTER_VERSION=${NODE_EXPORTER_VERSION:-$NODE_EXPORTER_DEFAULT_VERSION}
 
 #Kube State Metrics
-echo
-read -p "Enter Kube State Metrics version [$KUBE_STATE_METRICS_DEFAULT_VERSION]: " KUBE_STATE_METRICS_VERSION
+#echo
+#read -p "Enter Kube State Metrics version [$KUBE_STATE_METRICS_DEFAULT_VERSION]: " KUBE_STATE_METRICS_VERSION
 KUBE_STATE_METRICS_VERSION=${KUBE_STATE_METRICS_VERSION:-$KUBE_STATE_METRICS_DEFAULT_VERSION}
 
 #Prometheus External URL
-echo
-read -p "Enter Prometheus external Url [$PROMETHEUS_DEFAULT_EXTERNAL_URL]: " PROMETHEUS_EXTERNAL_URL
+#echo
+#read -p "Enter Prometheus external Url [$PROMETHEUS_DEFAULT_EXTERNAL_URL]: " PROMETHEUS_EXTERNAL_URL
 PROMETHEUS_EXTERNAL_URL=${PROMETHEUS_EXTERNAL_URL:-$PROMETHEUS_DEFAULT_EXTERNAL_URL}
 
 #Alertmanager External URL
-echo
-read -p "Enter Alertmanager external Url [$ALERTMANAGER_DEFAULT_EXTERNAL_URL]: " ALERTMANAGER_EXTERNAL_URL
+#echo
+#read -p "Enter Alertmanager external Url [$ALERTMANAGER_DEFAULT_EXTERNAL_URL]: " ALERTMANAGER_EXTERNAL_URL
 ALERTMANAGER_EXTERNAL_URL=${ALERTMANAGER_EXTERNAL_URL:-$ALERTMANAGER_DEFAULT_EXTERNAL_URL}
 
 #Dedicated nodes?
-echo
-echo -e "${ORANGE}Do you want to use ${WHITE}NodeSelector ${ORANGE} to assign monitoring components on dedicated nodes?"
-tput sgr0
-read -p "Y/N [N]: " use_dedicated_nodes
-
+#echo
+#echo -e "${ORANGE}Do you want to use ${WHITE}NodeSelector ${ORANGE} to assign monitoring components on dedicated nodes?"
+#tput sgr0
+#read -p "Y/N [N]: " use_dedicated_nodes
+use_dedicated_nodes=N
 #if so, fill out this form...
 if [[ $use_dedicated_nodes =~ ^([yY][eE][sS]|[yY])$ ]]; then
 
@@ -270,11 +270,11 @@ sed -i -e 's,ALERTMANAGER_EXTERNAL_URL,'"$ALERTMANAGER_EXTERNAL_URL"',g' manifes
 #configure alert channels
 ##########################################################################################################################################
 #SMTP
-echo
-echo -e "${BLUE}Do you want to set up an SMTP relay?"
-tput sgr0
-read -p "Y/N [N]: " use_smtp
-
+#echo
+#echo -e "${BLUE}Do you want to set up an SMTP relay?"
+#tput sgr0
+#read -p "Y/N [N]: " use_smtp
+use_smtp=N
 #if so, fill out this form...
 if [[ $use_smtp =~ ^([yY][eE][sS]|[yY])$ ]]; then
   #smtp smarthost
@@ -306,11 +306,11 @@ if [[ $use_smtp =~ ^([yY][eE][sS]|[yY])$ ]]; then
 fi
 
 #Do you want to set up slack?
-echo
-echo -e "${BLUE}Do you want to set up slack alerts?"
-tput sgr0
-read -p "Y/N [N]: " use_slack
-
+#echo
+#echo -e "${BLUE}Do you want to set up slack alerts?"
+#tput sgr0
+#read -p "Y/N [N]: " use_slack
+use_slack=N
 #if so, fill out this form...
 if [[ $use_slack =~ ^([yY][eE][sS]|[yY])$ ]]; then
 
@@ -323,11 +323,11 @@ if [[ $use_slack =~ ^([yY][eE][sS]|[yY])$ ]]; then
 fi
 
 #Do you want to set up pagerduty?
-echo
-echo -e "${BLUE}Do you want to set up pagerduty alerts?"
-tput sgr0
-read -p "Y/N [N]: " use_pager
-
+#echo
+#echo -e "${BLUE}Do you want to set up pagerduty alerts?"
+#tput sgr0
+#read -p "Y/N [N]: " use_pager
+use_pager=N
 #if so, fill out this form...
 if [[ $use_pager =~ ^([yY][eE][sS]|[yY])$ ]]; then
 
@@ -387,20 +387,22 @@ echo -e "${ORANGE}Deploying Grafana"
 tput sgr0
 
 #grafana administrator username
-read -p "Enter Grafana administrator username [admin]: " GRAFANA_ADMIN_USERNAME
-GRAFANA_ADMIN_USERNAME=${GRAFANA_ADMIN_USERNAME:-admin}
+#read -p "Enter Grafana administrator username [admin]: " GRAFANA_ADMIN_USERNAME
+#GRAFANA_ADMIN_USERNAME=${GRAFANA_ADMIN_USERNAME:-admin}
+GRAFANA_ADMIN_USERNAME=admin
 
 #grafana administrator password
-prompt="Enter Grafana administrator password: "
-while IFS= read -p "$prompt" -r -s -n 1 char
-do
-    if [[ $char == $'\0' ]]
-    then
-        break
-    fi
-    prompt='*'
-    grafana_admin_password+="$char"
-done
+#prompt="Enter Grafana administrator password: "
+#while IFS= read -p "$prompt" -r -s -n 1 char
+#do
+#    if [[ $char == $'\0' ]]
+#    then
+#        break
+#    fi
+#    prompt='*'
+#    grafana_admin_password+="$char"
+#done
+grafana_admin_passwork=bancolombia123
 
 echo
 
@@ -424,25 +426,25 @@ kubectl apply -f manifests/prometheus/prometheus-k8s-rbac.yaml
 find manifests/prometheus -type f -not -path "self-hosted/*" -type f ! -name prometheus-k8s-rbac.yaml -exec kubectl --namespace "$NAMESPACE" apply -f {} \;
 
 #self-hosted
-if [[ "$(kubectl get pods -n kube-system | grep scheduler)" ]]; then
-  echo
-  echo -e "${ORANGE}Self hosted"
-  tput sgr0
-  kubectl apply -f manifests/k8s/self-hosted
-  kubectl apply -f manifests/prometheus/self-hosted
-else
-  echo
-  echo -e "${ORANGE}Skipping rules for self hosted clusters "
-  tput sgr0
-fi
+#if [[ "$(kubectl get pods -n kube-system | grep scheduler)" ]]; then
+#  echo
+#  echo -e "${ORANGE}Self hosted"
+#  tput sgr0
+#  kubectl apply -f manifests/k8s/self-hosted
+#  kubectl apply -f manifests/prometheus/self-hosted
+#else
+#  echo
+#  echo -e "${ORANGE}Skipping rules for self hosted clusters "
+#  tput sgr0
+#fi
 
 ######################################################################################################
 #cleanup
 ######################################################################################################
-echo
-echo -e "${BLUE}Removing local changes"
-git checkout -- .
+#echo
+#echo -e "${BLUE}Removing local changes"
+#git checkout -- .
 
 echo
 echo -e "${GREEN}Done"
-tput sgr0
+#tput sgr0
