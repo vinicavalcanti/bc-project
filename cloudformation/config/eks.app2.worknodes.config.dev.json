@@ -1,0 +1,17 @@
+{
+    "Parameters": {
+        "KeyName": "vinicius.cavalcanti",
+        "NodeImageId": "ami-0440e4f6b9713faf6",
+        "NodeInstanceType": "t2.xlarge",
+        "NodeAutoScalingGroupMinSize": "1",
+        "NodeAutoScalingGroupMaxSize": "3",
+        "NodeVolumeSize": "20",
+        "NodeGroupName": "nodegroup-app2",
+        "VpcId": "vpc-05e9cc266ae11b873",
+        "Subnets": "subnet-046a7b945c72009f9,subnet-08eac3141a54bc5ad,subnet-0315a3dabd50e566b",
+        "Environment": "dev"
+    },
+    "Tags": {
+        "Environment": "dev"
+    }
+}
