@@ -357,7 +357,7 @@ Resources:
                   - kubectl get svc
                   - kubectl get nodes
                   - |
-                      cat > /tmp/awsauth-cm.yml <<EOL
+                      cat > /tmp/awsauth2-cm.yml <<EOL
                         apiVersion: v1
                         kind: ConfigMap
                         metadata:
@@ -381,7 +381,7 @@ Resources:
                                 - system:masters
                       EOL
                   - cat /tmp/awsauth-cm.yml
-                  - kubectl patch -f /tmp/awsauth-cm.yml
+                  - kubectl apply -f /tmp/awsauth2-cm.yml
                   - kubectl get nodes
 
         Type: CODEPIPELINE
