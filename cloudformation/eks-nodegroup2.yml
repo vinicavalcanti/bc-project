@@ -361,7 +361,7 @@ Resources:
                         apiVersion: v1
                         kind: ConfigMap
                         metadata:
-                          name: aws-auth
+                          name: aws-auth-wk2
                           namespace: kube-system
                         data:
                           mapRoles: |
