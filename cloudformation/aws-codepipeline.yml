@@ -257,33 +257,6 @@ Resources:
                 RoleArn: !GetAtt MasterEKSRole.Arn
               OutputArtifacts: []
 
-###### Deploy second worker nodes #########
-## Deploy Worker Nodes
-            - RunOrder: 2
-              Name: WorkNodes-App2
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: Repo
-              Configuration:
-                ActionMode: CREATE_UPDATE
-                Capabilities: CAPABILITY_IAM
-                StackName: !Sub "${AWS::StackName}-workers-app2"
-                TemplatePath: "Repo::cloudformation/amazon-eks-nodegroup.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks.app2.worknodes.config.dev.json"
-                ParameterOverrides: !Sub |
-                  {
-                     "ClusterName" : "${ClusterName}",
-                     "Environment" : "dev"
-                  }
-                RoleArn: !GetAtt MasterEKSRole.Arn
-              OutputArtifacts: []
-
-######################################################
-
             - RunOrder: 3
               Name: "WorkerJoin"
               InputArtifacts:
