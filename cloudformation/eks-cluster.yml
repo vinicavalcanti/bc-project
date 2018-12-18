@@ -25,7 +25,7 @@ Resources:
     Type: "AWS::EKS::Cluster"
     Properties:
       Name: !Ref ClusterName
-      Version: "1.10"
+      Version: "1.11"
       RoleArn: !ImportValue eks-vc-role
       ResourcesVpcConfig:
         SecurityGroupIds:

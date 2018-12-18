@@ -28,10 +28,9 @@ Parameters:
 
 ## ***************************** Resources section ************************************
 Resources:
-
 #############################################################################
 # CodeBuild: BuildProject: Test Files
-# - Utiliza serverless framework para hacer despliegue de funciones serverless
+# - Validate the Cloudformation and the json files
 
   ValidateConfig:
     Type: AWS::CodeBuild::Project
@@ -70,10 +69,13 @@ Resources:
                             aws cloudformation validate-template --template-body file://$cfn_template
                       done
         Type: CODEPIPELINE
+### End of ValidateConfig Build Project
 
 
 #############################################################################
-################ Kong Codebuild Deploy Project ##############################
+## - CodeBuild: BuildProject: KongBuildConfig
+## - Codebuild project to deploy the kong inside the EKS ClusterName
+
   KongBuildConfig:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -114,55 +116,12 @@ Resources:
                   - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
                   - kubectl apply -f k8s/kong/deployment.yaml
         Type: CODEPIPELINE
+### End of KongBuild Project
+
 
 #############################################################################
-################ Kong Codebuild Deploy Project ##############################
-  GrafanaBuildConfig:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
-        Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: EKS_CLUSTER_NAME
-            Value: !Ref ClusterName
-          - Name: EKS_KUBECTL_ROLE_ARN
-            Value: !GetAtt MasterEKSRole.Arn
-      Name: !Sub "${AWS::StackName}-codebuild-grafana-deploy"
-      ServiceRole: !Ref CodeBuildRole
-      Source:
-        BuildSpec: !Sub |
-            version: 0.2
-            phases:
-              install:
-                commands:
-                  - pwd
-                  - ls -lh
-                  - curl -sS -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
-                  - curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
-                  - apt-get update && apt-get -y install jq golang python3-pip python3-dev && pip3 install --upgrade awscli
-                  - export KUBECONFIG=$HOME/.kube/config
-                  - chmod +x /usr/local/bin/kubectl /usr/local/bin/aws-iam-authenticator
-              build:
-                commands:
-                  - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-                  - echo $EKS_KUBECTL_ROLE_ARN
-                  - CREDS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
-                  - export AWS_ACCESS_KEY_ID="$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"
-                  - export AWS_SECRET_ACCESS_KEY="$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')"
-                  - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
-                  - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
-                  - cd prometheus-kubernetes
-                  - ls -lh
-                  - bash deploy
-        Type: CODEPIPELINE
-
-#############################################################################
-# CodeBuild: BuildProject: Test Files
-# - Utiliza serverless framework para hacer despliegue de funciones serverless
+# CodeBuild Role
+# - Create a role for codebuild to be able to assume role and interact with cluster
 
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -210,10 +169,18 @@ Resources:
       Roles:
         -
           !Ref CodeBuildRole
+### End of Codebuild Role
+
 
 ############################################################################
 # Pipeline: ApplicationPipeline
-# - Pipeline Multi-Stage para hacer el release management de una aplicacion
+# - Pipeline Multi-Stage with the steps:
+# 1 - Get source code from Repository
+# 2 - Test the syntax of the Files
+# 3 - Deploy the EKS Cluster
+# 4 - Deploy the EKS Workernodes
+# 5 - Join the Workernodes to the EKS Cluster
+# 6 - Deploy Kong inside the EKS Cluster
 
   bc:
     Type: "AWS::CodePipeline::Pipeline"
@@ -239,7 +206,7 @@ Resources:
               OutputArtifacts:
                 - Name: Repo
 
-        # Stage de prueba de los templates
+        # Stage to test the Cloudformation and Json files
         - Name: Test
           Actions:
             - RunOrder: 1
@@ -255,9 +222,9 @@ Resources:
                 ProjectName: !Sub "${AWS::StackName}-codebuild-validate"
               OutputArtifacts: []
 
+        ## Stage to deploy EKS Cluster
         - Name: Dev
           Actions:
-            ## Deploy EKS Cluster
             - RunOrder: 1
               Name: EKS-Cluster
               ActionTypeId:
@@ -271,8 +238,8 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 Capabilities: CAPABILITY_IAM
                 StackName: !Sub "${AWS::StackName}-cluster"
-                TemplatePath: "Repo::cloudformation/eks-vc-cluster.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks.config.dev.json"
+                TemplatePath: "Repo::cloudformation/eks-cluster.yml"
+                TemplateConfiguration: "Repo::cloudformation/config/eks-cluster.config.dev.json"
                 ParameterOverrides: !Sub |
                   {
                      "ClusterName" : "${ClusterName}",
@@ -280,7 +247,7 @@ Resources:
                   }
                 RoleArn: !GetAtt MasterEKSRole.Arn
 
-            ## Deploy Worker Nodes 1
+            ## Stage to deploy the Workernodes
             - RunOrder: 2
               Name: WorkerNodes1
               ActionTypeId:
@@ -295,7 +262,7 @@ Resources:
                 Capabilities: CAPABILITY_IAM
                 StackName: !Sub "${AWS::StackName}-workers"
                 TemplatePath: "Repo::cloudformation/eks-nodegroup1.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks.nodegroup1.config.dev.json"
+                TemplateConfiguration: "Repo::cloudformation/config/eks-workernode.config.dev.json"
                 ParameterOverrides: !Sub |
                   {
                      "ClusterName" : "${ClusterName}",
@@ -304,32 +271,7 @@ Resources:
                 RoleArn: !GetAtt MasterEKSRole.Arn
               OutputArtifacts: []
 
-              ## Deploy Worker Nodes 2
-            - RunOrder: 2
-              Name: WorkerNodes2
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: Repo
-              Configuration:
-                ActionMode: CREATE_UPDATE
-                Capabilities: CAPABILITY_IAM
-                StackName: !Sub "${AWS::StackName}-workers2"
-                TemplatePath: "Repo::cloudformation/eks-nodegroup2.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks.nodegroup2.config.dev.json"
-                ParameterOverrides: !Sub |
-                  {
-                     "ClusterName" : "${ClusterName}",
-                     "Environment" : "dev"
-                  }
-                RoleArn: !GetAtt MasterEKSRole.Arn
-              OutputArtifacts: []
-
-################## Join Workgroup1 ##################
-
+            ## Stage to join the Workernode to EKS Cluster
             - RunOrder: 3
               Name: "Join-NodeGroup1"
               InputArtifacts:
@@ -343,22 +285,7 @@ Resources:
                 ProjectName: !Sub "${ClusterName}-codebuild-worker-join1"
               OutputArtifacts: []
 
-################## Join Workgroup2 ##################
-
-            - RunOrder: 3
-              Name: "Join-NodeGroup2"
-              InputArtifacts:
-                - Name: Repo
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Sub "${ClusterName}-codebuild-worker-join2"
-              OutputArtifacts: []
-
-### Deploy Kong inside the eks Cluster
+            ## Stage to deploy Kong inside the eks Cluster
             - RunOrder: 4
               Name: "KongDeploy"
               InputArtifacts:
@@ -372,23 +299,10 @@ Resources:
                 ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
               OutputArtifacts: []
 
-### Deploy Grafana inside the eks Cluster
-            - RunOrder: 5
-              Name: "GrafanaDeploy"
-              InputArtifacts:
-                - Name: Repo
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Sub "${AWS::StackName}-codebuild-grafana-deploy"
-              OutputArtifacts: []
-
       ArtifactStore:
         Type: S3
         Location: !Ref CodepipelineBucket
+## End of Pipeline
 
 ############################################################################
 # Role: IAM Roles
@@ -543,7 +457,9 @@ Resources:
               - !Sub "arn:aws:s3:::${CodepipelineBucket}/*"
       Roles:
         - !Ref MasterEKSRole
+### End of CodePipeline Role
 
+## Export the EKS Role to be used in others cloudformation templates.
 Outputs:
     MasterEKSRole:
       Value: !GetAtt MasterEKSRole.Arn
