@@ -370,15 +370,6 @@ Resources:
                               groups:
                                 - system:bootstrappers
                                 - system:nodes
-                          mapUsers: |
-                            - userarn: arn:aws:iam::485164690107:user/leonel.morais
-                              username: leonel.morais
-                              groups:
-                                - system:masters
-                            - userarn: arn:aws:iam::485164690107:user/vinicius.cavalcanti
-                              username: vinicius.cavalcanti
-                              groups:
-                                - system:masters
                       EOL
                   - cat /tmp/awsauth-cm.yml
                   - kubectl apply -f /tmp/awsauth-cm.yml
