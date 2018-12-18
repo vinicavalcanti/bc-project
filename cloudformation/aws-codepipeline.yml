@@ -282,6 +282,8 @@ Resources:
                 RoleArn: !GetAtt MasterEKSRole.Arn
               OutputArtifacts: []
 
+######################################################
+
             - RunOrder: 3
               Name: "WorkerJoin"
               InputArtifacts:
@@ -400,6 +402,7 @@ Resources:
               Service:
                 - cloudformation.amazonaws.com
                 - codebuild.amazonaws.com
+                - codepipeline.amazonaws.com
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
               - sts:AssumeRole
