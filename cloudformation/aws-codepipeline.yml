@@ -233,9 +233,9 @@ Resources:
                   }
                 RoleArn: !GetAtt MasterEKSRole.Arn
 
-            ## Deploy Worker Nodes
+            ## Deploy Worker Nodes 1
             - RunOrder: 2
-              Name: EKS-WorkerNodes
+              Name: WorkerNodes1
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -249,6 +249,30 @@ Resources:
                 StackName: !Sub "${AWS::StackName}-workers"
                 TemplatePath: "Repo::cloudformation/amazon-eks-nodegroup.yml"
                 TemplateConfiguration: "Repo::cloudformation/config/eks.workernodes.config.dev.json"
+                ParameterOverrides: !Sub |
+                  {
+                     "ClusterName" : "${ClusterName}",
+                     "Environment" : "dev"
+                  }
+                RoleArn: !GetAtt MasterEKSRole.Arn
+              OutputArtifacts: []
+
+              ## Deploy Worker Nodes 1
+            - RunOrder: 2
+              Name: WorkerNodes2
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: Repo
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_IAM
+                StackName: !Sub "${AWS::StackName}-workers2"
+                TemplatePath: "Repo::cloudformation/amazon-eks-nodegroup.yml"
+                TemplateConfiguration: "Repo::cloudformation/config/eks.app2.worknodes.config.dev.json"
                 ParameterOverrides: !Sub |
                   {
                      "ClusterName" : "${ClusterName}",
