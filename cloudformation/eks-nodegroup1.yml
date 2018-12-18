@@ -373,7 +373,7 @@ Resources:
                       EOL
                   - cat /tmp/awsauth-cm.yml
 #                  - kubectl apply -f /tmp/awsauth-cm.yml
-                  - kubectl get nodes
+#                  - kubectl get nodes
 
         Type: CODEPIPELINE
 ##########################
