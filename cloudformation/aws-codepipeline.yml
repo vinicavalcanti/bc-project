@@ -286,7 +286,7 @@ Resources:
 ################## Join Workgroup1 ##################
 
             - RunOrder: 3
-              Name: "Join NodeGroup1"
+              Name: "Join-NodeGroup1"
               InputArtifacts:
                 - Name: Repo
               ActionTypeId:
@@ -301,7 +301,7 @@ Resources:
 ################## Join Workgroup2 ##################
 
             - RunOrder: 3
-              Name: "Join NodeGroup2"
+              Name: "Join-NodeGroup2"
               InputArtifacts:
                 - Name: Repo
               ActionTypeId:
