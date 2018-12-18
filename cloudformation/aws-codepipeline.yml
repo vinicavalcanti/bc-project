@@ -282,7 +282,8 @@ Resources:
                   }
                 RoleArn: !GetAtt MasterEKSRole.Arn
               OutputArtifacts: []
-#############################################
+
+################## Join Workgroup1 ##################
 
             - RunOrder: 3
               Name: "WorkerJoin"
@@ -294,7 +295,22 @@ Resources:
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Sub "${ClusterName}-codebuild-worker-join"
+                ProjectName: !Sub "${ClusterName}-codebuild-worker-join1"
+              OutputArtifacts: []
+
+################## Join Workgroup2 ##################
+
+            - RunOrder: 3
+              Name: "WorkerJoin"
+              InputArtifacts:
+                - Name: Repo
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Sub "${ClusterName}-codebuild-worker-join2"
               OutputArtifacts: []
 
 ### Deploy Kong inside the eks Cluster
