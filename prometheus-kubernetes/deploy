@@ -426,25 +426,25 @@ kubectl apply -f manifests/prometheus/prometheus-k8s-rbac.yaml
 find manifests/prometheus -type f -not -path "self-hosted/*" -type f ! -name prometheus-k8s-rbac.yaml -exec kubectl --namespace "$NAMESPACE" apply -f {} \;
 
 #self-hosted
-if [[ "$(kubectl get pods -n kube-system | grep scheduler)" ]]; then
-  echo
-  echo -e "${ORANGE}Self hosted"
-  tput sgr0
-  kubectl apply -f manifests/k8s/self-hosted
-  kubectl apply -f manifests/prometheus/self-hosted
-else
-  echo
-  echo -e "${ORANGE}Skipping rules for self hosted clusters "
-  tput sgr0
-fi
+#if [[ "$(kubectl get pods -n kube-system | grep scheduler)" ]]; then
+#  echo
+#  echo -e "${ORANGE}Self hosted"
+#  tput sgr0
+#  kubectl apply -f manifests/k8s/self-hosted
+#  kubectl apply -f manifests/prometheus/self-hosted
+#else
+#  echo
+#  echo -e "${ORANGE}Skipping rules for self hosted clusters "
+#  tput sgr0
+#fi
 
 ######################################################################################################
 #cleanup
 ######################################################################################################
-echo
-echo -e "${BLUE}Removing local changes"
-git checkout -- .
+#echo
+#echo -e "${BLUE}Removing local changes"
+#git checkout -- .
 
 echo
 echo -e "${GREEN}Done"
-tput sgr0
+#tput sgr0
