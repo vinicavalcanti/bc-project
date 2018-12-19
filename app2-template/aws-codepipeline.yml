@@ -29,6 +29,49 @@ Parameters:
 ## ***************************** Resources section ************************************
 Resources:
 #############################################################################
+# CodeBuild: BuildProject: Test Files
+# - Validate the Cloudformation and the json files
+
+  ValidateConfig:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/nodejs:7.0.0
+        Type: LINUX_CONTAINER
+      Name: !Sub "${AWS::StackName}-codebuild-validate"
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        BuildSpec: !Sub |
+            version: 0.1
+            phases:
+              install:
+                commands:
+                  npm install jsonlint -g
+              pre_build:
+                commands:
+                  - ls -l
+              build:
+                commands:
+                  - echo "Validating config files"
+                  - |
+                      for conf in app2-template/config/*.json; do
+                          echo "Validating CFN parameters config file $conf"
+                          jsonlint -q $conf
+                      done
+                  - echo "Validating Cloudformation template"
+                  - |
+                      for cfn_template in app2-template/*.yml; do
+                            echo "----------------------"
+                            echo "Validating CloudFormation template file $cfn_template"
+                            aws cloudformation validate-template --template-body file://$cfn_template
+                      done
+        Type: CODEPIPELINE
+### End of ValidateConfig Build Project
+
+
 ## - CodeBuild: BuildProject: KongBuildConfig
 ## - Codebuild project to deploy the kong inside the EKS ClusterName
 
@@ -175,8 +218,8 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 Capabilities: CAPABILITY_IAM
                 StackName: !Sub "${AWS::StackName}-workers"
-                TemplatePath: "Repo::cloudformation/eks-nodegroup1.yml"
-                TemplateConfiguration: "Repo::cloudformation/config/eks-workernode.config.dev.json"
+                TemplatePath: "Repo::app2-template/eks-nodegroup1.yml"
+                TemplateConfiguration: "Repo::app2-template/config/eks-workernode.config.dev.json"
                 ParameterOverrides: !Sub |
                   {
                      "ClusterName" : "${ClusterName}",

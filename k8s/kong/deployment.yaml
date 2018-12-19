@@ -537,8 +537,6 @@ kind: Service
 metadata:
   name: kong-proxy
   namespace: kong
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: "alb"
 spec:
   type: LoadBalancer
   ports:
