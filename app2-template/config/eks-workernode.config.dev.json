@@ -2,9 +2,9 @@
     "Parameters": {
         "KeyName": "vinicius.cavalcanti",
         "NodeImageId": "ami-0b4eb1d8782fc3aea",
-        "NodeInstanceType": "t2.medium",
+        "NodeInstanceType": "t2.xlarge",
         "NodeAutoScalingGroupMinSize": "1",
-        "NodeAutoScalingGroupMaxSize": "3",
+        "NodeAutoScalingGroupMaxSize": "2",
         "NodeVolumeSize": "20",
         "NodeGroupName": "nodegroup-cluster",
         "VpcId": "vpc-0f213ea49868d36ef",
