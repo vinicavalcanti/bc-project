@@ -1,0 +1,381 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Crea un pipeline para Infraestructura
+
+## ***************************** Parameters section ************************************
+Parameters:
+
+  CodepipelineBucket:
+    Description: "Bucket for codepipeline"
+    Type: String
+
+  ClusterName:
+    Description: "EKS ClusterName"
+    Type: String
+
+  Repository:
+    Description: "Repository"
+    Type: String
+
+  OAuthToken:
+    Description: "OAuth Token"
+    Type: String
+    NoEcho: true
+
+  Owner:
+    Description: "Github Owner"
+    Type: String
+
+## ***************************** Resources section ************************************
+Resources:
+#############################################################################
+## - CodeBuild: BuildProject: KongBuildConfig
+## - Codebuild project to deploy the kong inside the EKS ClusterName
+
+  KongBuildConfig:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: EKS_CLUSTER_NAME
+            Value: !Ref ClusterName
+          - Name: EKS_KUBECTL_ROLE_ARN
+            Value: !GetAtt MasterEKSRole.Arn
+      Name: !Sub "${AWS::StackName}-codebuild-kong-deploy"
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        BuildSpec: !Sub |
+            version: 0.2
+            phases:
+              install:
+                commands:
+                  - pwd
+                  - ls -lh
+                  - curl -sS -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
+                  - curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+                  - apt-get update && apt-get -y install jq golang python3-pip python3-dev && pip3 install --upgrade awscli
+                  - export KUBECONFIG=$HOME/.kube/config
+                  - chmod +x /usr/local/bin/kubectl /usr/local/bin/aws-iam-authenticator
+              build:
+                commands:
+                  - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+                  - echo $EKS_KUBECTL_ROLE_ARN
+                  - CREDS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+                  - export AWS_ACCESS_KEY_ID="$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"
+                  - export AWS_SECRET_ACCESS_KEY="$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')"
+                  - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
+                  - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
+                  - kubectl apply -f k8s/kong/deployment.yaml
+        Type: CODEPIPELINE
+### End of KongBuild Project
+
+#############################################################################
+# CodeBuild Role
+# - Create a role for codebuild to be able to assume role and interact with cluster
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+
+  CodeBuildPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-cb-validate-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - logs:*
+              - codebuild:*
+              - cloudformation:ValidateTemplate
+              - sts:AssumeRole
+            Resource: "*"
+
+          - Resource: '*'
+            Effect: Allow
+            Action:
+              - eks:Describe*
+
+          -
+            Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - !Sub "arn:aws:s3:::${CodepipelineBucket}"
+              - !Sub "arn:aws:s3:::${CodepipelineBucket}/*"
+      Roles:
+        -
+          !Ref CodeBuildRole
+### End of Codebuild Role
+
+
+############################################################################
+# Pipeline: ApplicationPipeline
+# - Pipeline Multi-Stage with the steps:
+# 1 - Get source code from Repository
+# 2 - Test the syntax of the Files
+# 3 - Deploy the EKS Cluster
+# 4 - Deploy the EKS Workernodes
+# 5 - Join the Workernodes to the EKS Cluster
+# 6 - Deploy Kong inside the EKS Cluster
+
+  bc:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt PipeLineRole.Arn
+      Stages:
+        -
+          Name: Source
+          Actions:
+            - RunOrder: 1
+              Name: SourceFiles
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref Owner
+                OAuthToken: !Ref OAuthToken
+                Repo: !Ref Repository
+                Branch: "master"
+                PollForSourceChanges: true
+              OutputArtifacts:
+                - Name: Repo
+
+            ## Stage to deploy the Workernodes
+            - RunOrder: 2
+              Name: App2-WorkNodes
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: Repo
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_IAM
+                StackName: !Sub "${AWS::StackName}-workers"
+                TemplatePath: "Repo::cloudformation/eks-nodegroup1.yml"
+                TemplateConfiguration: "Repo::cloudformation/config/eks-workernode.config.dev.json"
+                ParameterOverrides: !Sub |
+                  {
+                     "ClusterName" : "${ClusterName}",
+                     "Environment" : "dev"
+                  }
+                RoleArn: !GetAtt MasterEKSRole.Arn
+              OutputArtifacts: []
+
+            ## Stage to join the Workernode to EKS Cluster
+            - RunOrder: 3
+              Name: "Join-App2-WorkNodes"
+              InputArtifacts:
+                - Name: Repo
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Sub "${ClusterName}-codebuild-workerjoin"
+              OutputArtifacts: []
+
+            ## Stage to deploy Kong inside the eks Cluster
+#            - RunOrder: 4
+#              Name: "KongDeploy"
+#              InputArtifacts:
+#                - Name: Repo
+#              ActionTypeId:
+#                Category: Build
+#                Owner: AWS
+#                Version: 1
+#                Provider: CodeBuild
+#              Configuration:
+#                ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
+#              OutputArtifacts: []
+
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodepipelineBucket
+## End of Pipeline
+
+############################################################################
+# Role: IAM Roles
+# - Role required for CodePipeline
+
+  PipeLineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+
+  PipelinePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-codepipeline-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+             - codebuild:StartBuild
+             - codebuild:BatchGetBuilds
+            Resource:
+            - "*"
+          -
+            Effect: Allow
+            Action:
+              - codepipeline:*
+              - iam:ListRoles
+              - s3:ListAllMyBuckets
+              - s3:GetBucketLocation
+            Resource:
+              - "*"
+          -
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource:
+              - !GetAtt MasterEKSRole.Arn
+          -
+            Effect: Allow
+            Action:
+              - cloudformation:Describe*
+              - cloudFormation:List*
+              - cloudformation:CreateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:UpdateStack
+              - cloudformation:CreateChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:SetStackPolicy
+              - cloudformation:ValidateTemplate
+            Resource:
+              - "*"
+          -
+            Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - !Sub "arn:aws:s3:::${CodepipelineBucket}"
+              - !Sub "arn:aws:s3:::${CodepipelineBucket}/*"
+      Roles:
+        - !Ref PipeLineRole
+
+  MasterEKSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+                - codebuild.amazonaws.com
+                - codepipeline.amazonaws.com
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  EKSMasterDeployerPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: cloudformationdeployer-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+              - iam:GetRole
+              - iam:DeleteRole
+              - iam:PutRolePolicy
+              - iam:PassRole
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:CreateInstanceProfile
+              - iam:DeleteInstanceProfile
+              - iam:RemoveRoleFromInstanceProfile
+              - iam:AddRoleToInstanceProfile
+              - codebuild:*
+            Resource: "*"
+          -
+            Effect: Allow
+            Action:
+              - cloudformation:Describe*
+              - cloudFormation:List*
+              - cloudformation:CreateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:UpdateStack
+              - cloudformation:CreateChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:SetStackPolicy
+              - cloudformation:ValidateTemplate
+            Resource:
+              - "*"
+          -
+            Effect: Allow
+            Action:
+              - eks:*
+              - ec2:*
+              - autoscaling:*
+            Resource:
+              - "*"
+          -
+            Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - !Sub "arn:aws:s3:::${CodepipelineBucket}"
+              - !Sub "arn:aws:s3:::${CodepipelineBucket}/*"
+      Roles:
+        - !Ref MasterEKSRole
+### End of CodePipeline Role
+
+## Export the EKS Role to be used in others cloudformation templates.
+Outputs:
+    MasterEKSRole:
+      Value: !GetAtt MasterEKSRole.Arn
+      Export:
+        Name: !Sub "${ClusterName}-master-role"

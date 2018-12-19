@@ -1,0 +1,9 @@
+{
+    "Parameters": {
+      "VpcId": "vpc-0f213ea49868d36ef",
+      "SubnetIDs" : "subnet-0a7922447b6a37264,subnet-0b8ad91a1e575d574"
+    },
+    "Tags": {
+        "Environment": "dev"
+    }
+}
