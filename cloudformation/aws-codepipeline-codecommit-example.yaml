@@ -247,8 +247,6 @@ Resources:
     Properties:
       RepositoryName: !Ref RepoName
 
-
-
   bc:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:
@@ -269,24 +267,6 @@ Resources:
               OutputArtifacts:
                 - Name: App
               RunOrder: 1
-
-          Name: Source
-          Actions:
-            - RunOrder: 1
-              Name: SourceFiles
-              ActionTypeId:
-                Category: Source
-                Owner: ThirdParty
-                Version: 1
-                Provider: GitHub
-              Configuration:
-                Owner: !Ref Owner
-                OAuthToken: !Ref OAuthToken
-                Repo: !Ref Repository
-                Branch: "master"
-                PollForSourceChanges: true
-              OutputArtifacts:
-                - Name: Repo
 
         # Stage to test the Cloudformation and Json files
         - Name: Test
