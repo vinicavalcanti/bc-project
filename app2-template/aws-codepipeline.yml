@@ -41,7 +41,7 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/nodejs:7.0.0
         Type: LINUX_CONTAINER
-      Name: !Sub "${AWS::StackName}-codebuild-validate"
+      Name: !Sub "${AWS::StackName}-codebuild-app2-validate"
       ServiceRole: !Ref CodeBuildRole
       Source:
         BuildSpec: !Sub |
@@ -89,7 +89,7 @@ Resources:
             Value: !Ref ClusterName
           - Name: EKS_KUBECTL_ROLE_ARN
             Value: !GetAtt MasterEKSRole.Arn
-      Name: !Sub "${AWS::StackName}-codebuild-kong-deploy"
+      Name: !Sub "${AWS::StackName}-codebuild-app2-kong-deploy"
       ServiceRole: !Ref CodeBuildRole
       Source:
         BuildSpec: !Sub |
@@ -139,7 +139,7 @@ Resources:
   CodeBuildPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub "${AWS::StackName}-cb-validate-policy"
+      PolicyName: !Sub "${AWS::StackName}-cb-validate-app2-policy"
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -205,7 +205,9 @@ Resources:
                 - Name: Repo
 
             ## Stage to deploy the Workernodes
-            - RunOrder: 2
+        - Name: Dev
+          Actions:
+            - RunOrder: 1
               Name: App2-WorkNodes
               ActionTypeId:
                 Category: Deploy
@@ -229,7 +231,7 @@ Resources:
               OutputArtifacts: []
 
             ## Stage to join the Workernode to EKS Cluster
-            - RunOrder: 3
+            - RunOrder: 2
               Name: "Join-App2-WorkNodes"
               InputArtifacts:
                 - Name: Repo
@@ -239,7 +241,7 @@ Resources:
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Sub "${ClusterName}-codebuild-workerjoin"
+                ProjectName: !Sub "${ClusterName}-codebuild-app2-workerjoin"
               OutputArtifacts: []
 
             ## Stage to deploy Kong inside the eks Cluster
@@ -255,7 +257,6 @@ Resources:
 #              Configuration:
 #                ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
 #              OutputArtifacts: []
-
       ArtifactStore:
         Type: S3
         Location: !Ref CodepipelineBucket
@@ -283,7 +284,7 @@ Resources:
   PipelinePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub "${AWS::StackName}-codepipeline-policy"
+      PolicyName: !Sub "${AWS::StackName}-codepipeline-app2-policy"
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -421,4 +422,4 @@ Outputs:
     MasterEKSRole:
       Value: !GetAtt MasterEKSRole.Arn
       Export:
-        Name: !Sub "${ClusterName}-master-role"
+        Name: !Sub "${ClusterName}-app2-master-role"
