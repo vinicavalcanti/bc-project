@@ -427,7 +427,7 @@ Resources:
             Value:
               Fn::ImportValue:
                 !Sub "${ClusterName}-master-role"
-      Name: !Sub "${ClusterName}-codebuild-app2-worker-join1"
+      Name: !Sub "${ClusterName}-codebuild-app2-workerjoin"
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         BuildSpec: !Sub |
