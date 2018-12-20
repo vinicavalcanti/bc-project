@@ -95,7 +95,7 @@ Parameters:
 
   BootstrapArguments:
     Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
-    Default: "--kubelet-extra-args --node-labels=bancolombia.com.co/service=canales-moviles,bancolombia.com.co/application=alm,bancolombia.com.co/env=dev,bancolombia.com.co/cost-center=pmo26200,bancolombia.com.co/application-code=1234"
+    Default: "--kubelet-extra-args --node-labels=bancolombia.com.co/service=canales-moviles,bancolombia.com.co/application=alm,bancolombia.com.co/env=dev,bancolombia.com.co/cost-center=pmo26200,bancolombia.com.co/application-code=1010"
     Type: String
 
   NodeGroupName:
@@ -455,25 +455,8 @@ Resources:
 
               post_build:
                   commands:
+                  - kubectl patch configmap aws-auth -n kube-system -p '{"apiVersion": "v1","kind": "ConfigMap","metadata": {"name": "aws-auth","namespace": "kube-system"},"data": {"mapRoles": "- rolearn: $EKS_WORKER_ROLE_ARN\n  username: system:node:{{EC2PrivateDNSName}}\n  groups:\n - system:bootstrappers\n - system:nodes\n"}}'
                   - kubectl get svc
-                  - kubectl get nodes
-                  - |
-                      cat > /tmp/awsauth-cm.yml <<EOL
-                        apiVersion: v1
-                        kind: ConfigMap
-                        metadata:
-                          name: aws-auth
-                          namespace: kube-system
-                        data:
-                          mapRoles: |
-                            - rolearn: $EKS_WORKER_ROLE_ARN
-                              username: system:node:{{EC2PrivateDNSName}}
-                              groups:
-                                - system:bootstrappers
-                                - system:nodes
-                      EOL
-                  - cat /tmp/awsauth-cm.yml
-                  - kubectl update -f /tmp/awsauth-cm.yml
                   - kubectl get nodes
 
         Type: CODEPIPELINE
