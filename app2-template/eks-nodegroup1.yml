@@ -472,7 +472,8 @@ Resources:
                       EOL
                   - cat /tmp/awsauth-cm.yml
                   - kubectl describe configmap aws-auth -n kube-system | grep -A 7 ^mapRoles >> /tmp/awsauth-cm.yml
-                  - cat /tmp/awsauth-cm.yml  
+                  - cat /tmp/awsauth-cm.yml
+                  - kubectl apply -f /tmp/awsauth-cm.yml
 
 
         Type: CODEPIPELINE
