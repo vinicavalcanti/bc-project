@@ -455,14 +455,25 @@ Resources:
 
               post_build:
                   commands:
-                  - kubectl get svc
-                  - kubectl get nodes
                   - |
                       cat > /tmp/awsauth-cm.yml <<EOL
-                        '{"apiVersion": v1,"kind": "ConfigMap","metadata": {"name": "aws-auth","namespace": "kube-system"},"data": {"mapRoles": "- rolearn: $EKS_WORKER_ROLE_ARN\n  username: system:node:{{EC2PrivateDNSName}}\n  groups:\n    - system:bootstrappers\n    - system:nodes\n"}}'
+                        apiVersion: v1
+                        kind: ConfigMap
+                        metadata:
+                          name: aws-auth
+                          namespace: kube-system
+                        data:
+                          mapRoles: |
+                            - rolearn: $EKS_WORKER_ROLE_ARN
+                              username: system:node:{{EC2PrivateDNSName}}
+                              groups:
+                                - system:bootstrappers
+                                - system:nodes
                       EOL
                   - cat /tmp/awsauth-cm.yml
-                  - kubectl patch configmap aws-auth -n kube-system -p $(cat /tmp/awsauth-cm.yml) 
+                  - kubectl describe configmap aws-auth -n kube-system | grep -A 7 ^mapRoles >> /tmp/awsauth-cm.yml
+                  - cat /tmp/awsauth-cm.yml  
+
 
         Type: CODEPIPELINE
 ##########################
