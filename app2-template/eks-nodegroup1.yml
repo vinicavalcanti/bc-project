@@ -455,9 +455,7 @@ Resources:
 
               post_build:
                 commands:
-                  - kubectl patch configmap aws-auth -n kube-system -p \
-                    '{"apiVersion": "v1","kind": "ConfigMap","metadata": {"name": "aws-auth","namespace": "kube-system"},"data": {"mapRoles": "- rolearn: $EKS_WORKER_ROLE_ARN\n  username: system:node:{{EC2PrivateDNSName}}\n  groups:\n    - system:bootstrappers\n    - system:nodes\n"}}'
-
+                  - kubectl patch configmap aws-auth -n kube-system -p '{"apiVersion": v1,"kind": "ConfigMap","metadata": {"name": "aws-auth","namespace": "kube-system"},"data": {"mapRoles": "- rolearn: $EKS_WORKER_ROLE_ARN\n  username: system:node:{{EC2PrivateDNSName}}\n  groups:\n    - system:bootstrappers\n    - system:nodes\n"}}'
         Type: CODEPIPELINE
 ##########################
   CodeBuildServiceRole:
