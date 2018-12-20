@@ -457,8 +457,7 @@ Resources:
                   commands:
                   - echo "    - rolearn: $EKS_WORKER_ROLE_ARN\n      username: system:node:{{EC2PrivateDNSName}}\n      groups:\n    - system:bootstrappers\n    - system:nodes" > /tmp/role
                   - cat /tmp/role
-                  - kubectl get -n kube-system configmap/aws-auth -o yaml | awk "/mapRoles: \|/{print;print \"$(cat /tmp/role)\";next}1" > /tmp/aws-auth-patch.yml
-                  - kubectl patch configmap/aws-auth -n kube-system --patch "$(cat /tmp/aws-auth-patch.yml)"
+
 
         Type: CODEPIPELINE
 ##########################
