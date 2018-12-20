@@ -416,7 +416,7 @@ Resources:
         Type: CODEPIPELINE
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: leonelmorais/bancolombia-aws-codebuild
         Type: LINUX_CONTAINER
         EnvironmentVariables:
           - Name: EKS_CLUSTER_NAME
@@ -433,15 +433,6 @@ Resources:
         BuildSpec: !Sub |
             version: 0.2
             phases:
-              install:
-                commands:
-                  - pwd
-                  - curl -sS -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
-                  - curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
-                  - ls -lh /usr/local/bin/
-                  - apt-get update && apt-get -y install jq golang python3-pip python3-dev && pip3 install --upgrade awscli
-                  - export KUBECONFIG=$HOME/.kube/config
-                  - chmod +x /usr/local/bin/kubectl /usr/local/bin/aws-iam-authenticator
               build:
                 commands:
                   - echo $EKS_KUBECTL_ROLE_ARN
