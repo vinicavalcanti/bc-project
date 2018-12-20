@@ -470,7 +470,7 @@ Resources:
                                 - system:bootstrappers
                                 - system:nodes
                       EOL
-                  - kubectl apply -f /tmp/awsauth-cm.yml
+#                  - kubectl apply -f /tmp/awsauth-cm.yml
 
 
         Type: CODEPIPELINE

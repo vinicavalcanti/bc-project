@@ -113,46 +113,37 @@ Resources:
 ## - CodeBuild: BuildProject: KongBuildConfig
 ## - Codebuild project to deploy the kong inside the EKS ClusterName
 
-#  KongBuildConfig:
-#    Type: AWS::CodeBuild::Project
-#    Properties:
-#      Artifacts:
-#        Type: CODEPIPELINE
-#      Environment:
-#        ComputeType: BUILD_GENERAL1_SMALL
-#        Image: aws/codebuild/docker:17.09.0
-#        Type: LINUX_CONTAINER
-#        EnvironmentVariables:
-#          - Name: EKS_CLUSTER_NAME
-#            Value: !Ref ClusterName
-#          - Name: EKS_KUBECTL_ROLE_ARN
-#            Value: !GetAtt MasterEKSRole.Arn
-#      Name: !Sub "${AWS::StackName}-codebuild-kong-deploy"
-#      ServiceRole: !Ref CodeBuildRole
-#      Source:
-#        BuildSpec: !Sub |
-#            version: 0.2
-#            phases:
-#              install:
-#                commands:
-#                  - pwd
-#                  - ls -lh
-#                  - curl -sS -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
-#                  - curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
-#                  - apt-get update && apt-get -y install jq golang python3-pip python3-dev && pip3 install --upgrade awscli
-#                  - export KUBECONFIG=$HOME/.kube/config
-#                  - chmod +x /usr/local/bin/kubectl /usr/local/bin/aws-iam-authenticator
-#              build:
-#                commands:
-#                  - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-#                  - echo $EKS_KUBECTL_ROLE_ARN
-#                  - CREDS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
-#                  - export AWS_ACCESS_KEY_ID="$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"
-#                  - export AWS_SECRET_ACCESS_KEY="$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')"
-#                  - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
-#                  - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
-#                  - kubectl apply -f k8s/kong/deployment.yaml
-#        Type: CODEPIPELINE
+  KongBuildConfig:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: leonelmorais/bancolombia-aws-codebuild
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: EKS_CLUSTER_NAME
+            Value: !Ref ClusterName
+          - Name: EKS_KUBECTL_ROLE_ARN
+            Value: !GetAtt MasterEKSRole.Arn
+      Name: !Sub "${AWS::StackName}-codebuild-kong-deploy"
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        BuildSpec: !Sub |
+            version: 0.2
+            phases:
+              build:
+                commands:
+                  - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+                  - echo $EKS_KUBECTL_ROLE_ARN
+                  - CREDS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+                  - export AWS_ACCESS_KEY_ID="$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"
+                  - export AWS_SECRET_ACCESS_KEY="$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')"
+                  - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
+                  - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
+                  - kubectl apply -f k8s/kong/deployment.yaml
+        Type: CODEPIPELINE
 ### End of KongBuild Project
 
 
@@ -338,18 +329,18 @@ Resources:
               OutputArtifacts: []
 
             ## Stage to deploy Kong inside the eks Cluster
-#            - RunOrder: 4
-#              Name: "KongDeploy"
-#              InputArtifacts:
-#                - Name: Repo
-#              ActionTypeId:
-#                Category: Build
-#                Owner: AWS
-#                Version: 1
-#                Provider: CodeBuild
-#              Configuration:
-#                ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
-#              OutputArtifacts: []
+            - RunOrder: 4
+              Name: "KongDeploy"
+              InputArtifacts:
+                - Name: Repo
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
+              OutputArtifacts: []
 
       ArtifactStore:
         Type: S3
