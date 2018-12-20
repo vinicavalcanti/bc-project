@@ -455,9 +455,12 @@ Resources:
 
               post_build:
                   commands:
-                  - echo "    - rolearn: $EKS_WORKER_ROLE_ARN\n      username: system:node:name-instance\n      groups:\n    - system:bootstrappers\n    - system:nodes" > /tmp/role
+                  - |
+                      cat > /tmp/role <<EOL
+                        - rolearn: $EKS_WORKER_ROLE_ARN\n      username: system:node:name-instance\n      groups:\n    - system:bootstrappers\n    - system:nodes
+                      EOL
                   - cat /tmp/role
-                  
+
         Type: CODEPIPELINE
 ##########################
   CodeBuildServiceRole:
