@@ -454,9 +454,9 @@ Resources:
                   - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
 
               post_build:
-                  commands:
+                commands:
                   - |
-                  		cat > /tmp/awsauth-cm.yml <<EOL
+                      cat > /tmp/awsauth-cm.yml <<EOL
                   			{
                   				"apiVersion": "v1",
                   				"kind": "ConfigMap",
