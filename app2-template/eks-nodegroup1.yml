@@ -443,19 +443,7 @@ Resources:
                   - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
                   - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
                   - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-
-              post_build:
-                  commands:
-                  - |
-                      cat > /tmp/role <<EOL
-                        - rolearn: $EKS_WORKER_ROLE_ARN\n      username: system:node:{{EC2PrivateDNSName}}\n      groups:\n    - system:bootstrappers\n    - system:nodes
-                      EOL
-                  - cat /tmp/role
-                  - export ROLE=$(cat /tmp/role)
-                  - echo $ROLE
-                  - kubectl get -n kube-system configmap/aws-auth -o yaml | awk "/mapRoles: \|/{print;print \"$ROLE\";next}1" > /tmp/aws-auth-patch.yml
-                  - cat /tmp/aws-auth-patch.yml
-
+                  - ./patch.sh $EKS_KUBECTL_ROLE_ARN
 
         Type: CODEPIPELINE
 ##########################
