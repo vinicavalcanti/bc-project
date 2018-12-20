@@ -316,7 +316,7 @@ Resources:
 
             ## Stage to deploy Kong inside the eks Cluster
             - RunOrder: 4
-              Name: "CelicoDeploy"
+              Name: "CalicoDeploy"
               InputArtifacts:
                 - Name: Repo
               ActionTypeId:
@@ -329,18 +329,18 @@ Resources:
               OutputArtifacts: []
 
             ## Stage to deploy Kong inside the eks Cluster
-#            - RunOrder: 4
-#              Name: "KongDeploy"
-#              InputArtifacts:
-#                - Name: Repo
-#              ActionTypeId:
-#                Category: Build
-#                Owner: AWS
-#                Version: 1
-#                Provider: CodeBuild
-#              Configuration:
-#                ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
-#              OutputArtifacts: []
+            - RunOrder: 5
+              Name: "KongDeploy"
+              InputArtifacts:
+                - Name: Repo
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Sub "${AWS::StackName}-codebuild-kong-deploy"
+              OutputArtifacts: []
 
       ArtifactStore:
         Type: S3
