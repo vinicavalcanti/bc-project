@@ -71,6 +71,43 @@ Resources:
         Type: CODEPIPELINE
 ### End of ValidateConfig Build Project
 
+#############################################################################
+## - CodeBuild: BuildProject: KongBuildConfig
+## - Codebuild project to deploy the kong inside the EKS ClusterName
+
+  DeployCalico:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: leonelmorais/bancolombia-aws-codebuild
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: EKS_CLUSTER_NAME
+            Value: !Ref ClusterName
+          - Name: EKS_KUBECTL_ROLE_ARN
+            Value: !GetAtt MasterEKSRole.Arn
+      Name: !Sub "${AWS::StackName}-calico-deploy"
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        BuildSpec: !Sub |
+            version: 0.2
+            phases:
+              build:
+                commands:
+                  - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+                  - echo $EKS_KUBECTL_ROLE_ARN
+                  - CREDS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+                  - export AWS_ACCESS_KEY_ID="$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"
+                  - export AWS_SECRET_ACCESS_KEY="$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')"
+                  - export AWS_SESSION_TOKEN="$(echo $CREDS | jq -r '.Credentials.SessionToken')"
+                  - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
+                  - kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.3/calico.yaml
+                  - kubectl get daemonset calico-node --namespace=kube-system
+        Type: CODEPIPELINE
+### End of KongBuild Project
 
 #############################################################################
 ## - CodeBuild: BuildProject: KongBuildConfig
@@ -117,6 +154,7 @@ Resources:
 #                  - kubectl apply -f k8s/kong/deployment.yaml
 #        Type: CODEPIPELINE
 ### End of KongBuild Project
+
 
 
 #############################################################################
@@ -283,6 +321,20 @@ Resources:
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Sub "${ClusterName}-codebuild-worker-join1"
+              OutputArtifacts: []
+
+            ## Stage to deploy Kong inside the eks Cluster
+            - RunOrder: 4
+              Name: "CelicoDeploy"
+              InputArtifacts:
+                - Name: Repo
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Sub "${AWS::StackName}-calico-deploy"
               OutputArtifacts: []
 
             ## Stage to deploy Kong inside the eks Cluster
