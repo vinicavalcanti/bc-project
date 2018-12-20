@@ -444,6 +444,28 @@ Resources:
                   - export AWS_EXPIRATION=$(echo $CREDS | jq -r '.Credentials.Expiration')
                   - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
                   - /bin/bash patch.sh $EKS_WORKER_ROLE_ARN
+              post_build:
+                  commands:
+                  - kubectl get svc
+                  - kubectl get nodes
+                  - |
+                      cat > /tmp/awsauth-cm.yml <<EOL
+                        apiVersion: v1
+                        kind: ConfigMap
+                        metadata:
+                          name: aws-auth
+                          namespace: kube-system
+                        data:
+                          mapRoles: |
+                            - rolearn: $EKS_WORKER_ROLE_ARN
+                              username: system:node:{{EC2PrivateDNSName}}
+                              groups:
+                                - system:bootstrappers
+                                - system:nodes
+                      EOL
+                  - cat /tmp/awsauth-cm.yml
+                  - kubectl apply -f /tmp/awsauth-cm.yml
+                  - kubectl get nodes
 
         Type: CODEPIPELINE
 ##########################
