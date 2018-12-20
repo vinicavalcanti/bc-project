@@ -27,7 +27,8 @@ spec:
             - --cluster-name=eks-dev
             - --aws-region=us-east-1
           env:
-          image: 894847497797.dkr.ecr.us-west-2.amazonaws.com/aws-alb-ingress-controller:v1.0.0
+          #image: 894847497797.dkr.ecr.us-west-2.amazonaws.com/aws-alb-ingress-controller:v1.0.0
+          image: quay.io/coreos/alb-ingress-controller:1.0-beta.7
           imagePullPolicy: Always
           name: server
           resources: {}
